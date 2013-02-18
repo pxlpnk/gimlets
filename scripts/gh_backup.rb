@@ -8,8 +8,9 @@ require 'json'
 
 # see: https://help.github.com/articles/creating-an-oauth-token-for-command-line-use
 # for how to create a Github.com oauth token
-TOKEN="your TOKEN"
+TOKEN="token TOKEN"
 MODE="owner"
+REPO_DIR="github"
 
 uri = URI.parse("https://api.github.com/user/repos")
 http = Net::HTTP.new(uri.host, uri.port)
@@ -29,7 +30,7 @@ repos.each do |repo|
   url = repo["ssh_url"]
   name = repo["name"]
   unless ( Dir.exists?(name) )
-    system "git clone #{url}"
+    system "git clone --mirror #{url} #{REPO_DIR}/#{name}"
   else
     puts "Repository #{name} already exists!"
   end
