@@ -21,17 +21,28 @@ headers = {
   "type"=> MODE
 }
 
-request = Net::HTTP::Get.new(uri.request_uri, headers)
 
-response = http.request(request)
-repos = JSON.parse(response.body) # => A string containing the JSON response
+repos = []
+begin
+  request = Net::HTTP::Get.new(uri.request_uri, headers)
+  response = http.request(request)
+  repos += JSON.parse(response.body) # => A string containing the JSON response
+  linkhdr = response["Link"]
+  if linkhdr
+    nextpage = linkhdr.split(", ").find { |x| x =~/rel="next"/}
+    if nextpage
+       uri= URI.parse(nextpage.split("; ").first.tr('<>', ''))
+    end
+  end
+end until nextpage.nil?
 
 repos.each do |repo|
-  url = repo["ssh_url"]
+  url = repo["clone_url"]
+  localdir=File.join(REPO_DIR,File.basename(url))
   name = repo["name"]
-  unless ( Dir.exists?(name) )
-    system "git clone --mirror #{url} #{REPO_DIR}/#{name}"
+  unless ( Dir.exists?(localdir) )
+    system "git clone --mirror #{url} #{localdir}"
   else
-    puts "Repository #{name} already exists!"
+    system "git --git-dir=#{localdir} remote update"
   end
 end
